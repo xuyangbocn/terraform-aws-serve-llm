@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Ollama pull models.",
+  "parameters": {
+    "Models": {
+      "type": "String",
+      "description": "List of models to pull (comma sep)."
+    },
+    "Vllm_serve_cmd": {
+      "type": "String",
+      "description": "Not in use for Ollama",
+      "default": ""
+    },
+    "App_port": {
+      "type": "String",
+      "description": "Ollama or vllm serve port"
+    },
+    "TimeoutSeconds": {
+      "type": "String",
+      "description": "(Optional) The time in seconds for a command to be completed before it is considered to have failed.",
+      "default": "3600"
+    }
+  },
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "runShellScript",
+      "inputs": {
+        "timeoutSeconds": "{{ TimeoutSeconds }}",
+        "runCommand": [
+          "#!/bin/bash",
+          "# Expose Ollama endpoints to external and over desired port",
+          "mkdir -p /etc/systemd/system/ollama.service.d/",
+          "{",
+          "  echo '[Service]';",
+          "  echo 'Environment=\"OLLAMA_HOST=0.0.0.0:{{App_port}}\"'",
+          "  echo 'Environment=\"OLLAMA_MODELS=/usr/share/ollama/.ollama/models\"'",
+          "  echo 'Environment=\"OLLAMA_KEEP_ALIVE=6h\"'",
+          "  echo 'Environment=\"OLLAMA_FLASH_ATTENTION=1\"'",
+          "} | tee /etc/systemd/system/ollama.service.d/override.conf",
+
+          "# Enable ollama",
+          "systemctl daemon-reload",
+          "systemctl enable ollama",
+          "systemctl start ollama",
+
+          "# Pull Models",
+          "export HOME=/root",
+          "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do",
+          "  echo \"Wait 10s for cloud-init to finish\"",
+          "  sleep 10",
+          "done",
+          "IFS=',' read -ra ms <<< \"{{Models}}\"",
+          "for m in \"${ms[@]}\"; do",
+          "   echo \"pull model $m \"",
+          "   ollama pull $m",
+          "   sleep 10",
+          "done"
+        ]
+      }
+    }
+  ]
+}

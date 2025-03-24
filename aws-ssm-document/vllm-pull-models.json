@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Vllm pull models.",
+  "parameters": {
+    "Models": {
+      "type": "String",
+      "description": "Not in use for Vllm",
+      "default": ""
+    },
+    "Vllm_serve_cmd": {
+      "type": "String",
+      "description": "vllm serve command"
+    },
+    "App_port": {
+      "type": "String",
+      "description": "Ollama or vllm serve port"
+    },
+    "TimeoutSeconds": {
+      "type": "String",
+      "description": "(Optional) The time in seconds for a command to be completed before it is considered to have failed.",
+      "default": "3600"
+    }
+  },
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "runShellScript",
+      "inputs": {
+        "timeoutSeconds": "{{ TimeoutSeconds }}",
+        "runCommand": [
+          "#!/bin/bash",
+          "# VLLM Serve model Command",
+          "source forvllm/bin/activate",
+          "{{ Vllm_serve_cmd }} --port {{ App_port }}"
+        ]
+      }
+    }
+  ]
+}
