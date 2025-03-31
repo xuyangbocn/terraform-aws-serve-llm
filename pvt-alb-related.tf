@@ -32,6 +32,7 @@ resource "aws_lb_target_group" "llm_http" {
   }
 
   health_check {
+    # To be enhanced: ollama has health check endpoint, vllm currently no
     enabled             = true
     healthy_threshold   = 5
     unhealthy_threshold = 2
@@ -61,9 +62,14 @@ resource "aws_lb_listener" "llm_http" {
 
   default_action {
     type = "forward"
-    target_group_arn = aws_lb_target_group.llm_http[
-      [for k, v in local.ec2_configs : k if v.use_as_main_ec2][0]
-    ].arn
+    target_group_arn = var.llm_server == "ollama" ? (
+      aws_lb_target_group.llm_http[
+        [for k, v in local.ec2_configs : k if v.ollama_main_ec2][0]
+      ].arn) : (
+      aws_lb_target_group.llm_http[
+        [for k, v in local.ec2_configs : k][0]
+      ].arn
+    )
   }
 }
 

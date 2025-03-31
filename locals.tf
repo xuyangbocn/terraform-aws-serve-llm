@@ -21,23 +21,12 @@ locals {
     sudo systemctl enable dlami-cloudwatch-agent@partial
     sudo systemctl start dlami-cloudwatch-agent@partial
 
-    # Download Ollama
-    curl -fsSL https://ollama.com/install.sh | sh
-
-    # Download VLLM
-    ## Download uv
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ## Python venv using uv
-    uv venv forvllm --python 3.12 --seed
-    source forvllm/bin/activate
-    uv pip install vllm
-
     EOF
 
   ec2_configs = {
     for i, v in var.llm_ec2_configs :
-    replace(v.llm_model, "/[-_.:]/", "") => {
-      id                          = replace(v.llm_model, "/[-_.:]/", "")
+    replace(v.id, "/[-_.:/]/", "") => {
+      id                          = replace(v.id, "/[-_.:/]/", "")
       llm_model                   = v.llm_model
       instance_family             = split(".", v.instance_type)[0]
       instance_type               = v.instance_type
@@ -46,11 +35,13 @@ locals {
       subnet_id                   = element(local.subnet_ids, i)
       az                          = element(var.azs, i)
       app_port                    = v.app_port
-      user_data                   = format(local.user_data, v.app_port, "6h")
+      user_data                   = local.user_data
       user_data_replace_on_change = false
 
-      use_as_main_ec2        = i == 0 ? true : false
-      pull_models            = i == 0 ? [for each in var.llm_ec2_configs : each.llm_model] : [v.llm_model]
+      ollama_main_ec2    = (var.llm_server == "ollama" && i == 0) ? true : false
+      ollama_pull_models = (var.llm_server == "ollama" && i == 0) ? [for each in var.llm_ec2_configs : each.llm_model] : [v.llm_model]
+      vllm_serve_cmd     = v.vllm_serve_cmd
+
       listener_rule_priority = i + 1
     }
   }

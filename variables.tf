@@ -15,29 +15,40 @@ variable "azs" {
   type        = list(string)
 }
 
+variable "llm_server" {
+  description = "Choose Ollama or VLLM as framework for deployment."
+  type        = string
+  validation {
+    condition     = var.llm_server != "vllm" || var.llm_server != "ollama"
+    error_message = "llm_server should be in [vllm, ollama]"
+  }
+}
+
 variable "llm_ec2_configs" {
   description = "List of EC2/EBS config for each LLM EC2"
   /* Ex.
   [
     {
-      server = "ollama"
+      id = "instance_x"
       llm_model = "llama3:8b"
-      vllm_serve_cmd = "vllm serve deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --dtype half --gpu-memory-utilization 0.9"
       instance_type = "g5g.xlarge"
       ami_id = "" 
       ebs_volume_gb = 200
       app_port = 11434
+
+      vllm_serve_cmd = "vllm serve deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --dtype half --gpu-memory-utilization 0.9"
     },
   ]
   */
   type = list(object({
-    server         = string # either "vllm" or "ollama"
-    llm_model      = string
+    id            = string # unique id to the instance
+    llm_model     = string
+    instance_type = string
+    ami_id        = string # if empty string, fall back to default DL AMI by AWS
+    ebs_volume_gb = number
+    app_port      = number
+
     vllm_serve_cmd = string
-    instance_type  = string
-    ami_id         = string # if empty string, fall back to default DL AMI by AWS
-    ebs_volume_gb  = number
-    app_port       = number
   }))
 }
 

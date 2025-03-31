@@ -113,7 +113,7 @@ resource "aws_instance" "llm" {
   }
   tags = {
     System = "${var.prefix}"
-    Name   = each.value.use_as_main_ec2 ? "${var.prefix}-main-${each.value.llm_model}" : "${var.prefix}-${each.value.llm_model}"
+    Name   = each.value.ollama_main_ec2 ? "${var.prefix}-main-${each.value.id}" : "${var.prefix}-${each.value.id}"
   }
 }
 
@@ -130,11 +130,11 @@ resource "aws_ssm_document" "pull_models" {
 resource "aws_ssm_association" "pull_models" {
   for_each = local.ec2_configs
 
-  name = aws_ssm_document.pull_models[each.server].name
+  name = aws_ssm_document.pull_models[var.llm_server].name
   parameters = {
-    "Models"         = join(",", each.value.pull_models),
-    "App_port"       = each.value.app_port,
-    "Vllm_serve_cmd" = each.value.vllm_serve_cmd
+    "Models"       = join(",", each.value.ollama_pull_models),
+    "AppPort"      = each.value.app_port,
+    "VllmServeCmd" = each.value.vllm_serve_cmd
   }
 
   targets {

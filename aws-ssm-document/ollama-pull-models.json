@@ -6,12 +6,12 @@
       "type": "String",
       "description": "List of models to pull (comma sep)."
     },
-    "Vllm_serve_cmd": {
+    "VllmServeCmd": {
       "type": "String",
       "description": "Not in use for Ollama",
       "default": ""
     },
-    "App_port": {
+    "AppPort": {
       "type": "String",
       "description": "Ollama or vllm serve port"
     },
@@ -29,11 +29,22 @@
         "timeoutSeconds": "{{ TimeoutSeconds }}",
         "runCommand": [
           "#!/bin/bash",
+
+          "export HOME=/root",
+          "# wait for cloud-init to finish",
+          "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do",
+          "  echo \"Wait 10s for cloud-init to finish\"",
+          "  sleep 10",
+          "done",
+
+          "# Download Ollama",
+          "curl -fsSL https://ollama.com/install.sh | sh",
+
           "# Expose Ollama endpoints to external and over desired port",
           "mkdir -p /etc/systemd/system/ollama.service.d/",
           "{",
           "  echo '[Service]';",
-          "  echo 'Environment=\"OLLAMA_HOST=0.0.0.0:{{App_port}}\"'",
+          "  echo 'Environment=\"OLLAMA_HOST=0.0.0.0:{{AppPort}}\"'",
           "  echo 'Environment=\"OLLAMA_MODELS=/usr/share/ollama/.ollama/models\"'",
           "  echo 'Environment=\"OLLAMA_KEEP_ALIVE=6h\"'",
           "  echo 'Environment=\"OLLAMA_FLASH_ATTENTION=1\"'",
@@ -45,11 +56,6 @@
           "systemctl start ollama",
 
           "# Pull Models",
-          "export HOME=/root",
-          "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do",
-          "  echo \"Wait 10s for cloud-init to finish\"",
-          "  sleep 10",
-          "done",
           "IFS=',' read -ra ms <<< \"{{Models}}\"",
           "for m in \"${ms[@]}\"; do",
           "   echo \"pull model $m \"",

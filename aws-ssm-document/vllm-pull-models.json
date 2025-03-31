@@ -7,11 +7,11 @@
       "description": "Not in use for Vllm",
       "default": ""
     },
-    "Vllm_serve_cmd": {
+    "VllmServeCmd": {
       "type": "String",
       "description": "vllm serve command"
     },
-    "App_port": {
+    "AppPort": {
       "type": "String",
       "description": "Ollama or vllm serve port"
     },
@@ -29,9 +29,26 @@
         "timeoutSeconds": "{{ TimeoutSeconds }}",
         "runCommand": [
           "#!/bin/bash",
-          "# VLLM Serve model Command",
+
+          "export HOME=/root",
+          "# wait for cloud-init to finish",
+          "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do",
+          "  echo \"Wait 10s for cloud-init to finish\"",
+          "  sleep 10",
+          "done",
+
+          "# Download uv",
+          "curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR='/usr/local/bin' sh",
+          "## Python venv using uv",
+          "cd /home",
+          "uv venv forvllm --python 3.12 --seed",
           "source forvllm/bin/activate",
-          "{{ Vllm_serve_cmd }} --port {{ App_port }}"
+
+          "# Install vllm",
+          "uv pip install vllm",
+
+          "# VLLM Serve model Command",
+          "{{ VllmServeCmd }} --port {{ AppPort }}"
         ]
       }
     }

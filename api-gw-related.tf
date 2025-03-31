@@ -68,7 +68,7 @@ resource "aws_apigatewayv2_integration" "root_post" {
 
 resource "aws_apigatewayv2_route" "root_get" {
   # To double check VLLM and OLLAMA API reference
-  count = var.create_api_gw ? 1 : 0
+  count = (var.create_api_gw && var.llm_server == "ollama") ? 1 : 0
 
   api_id    = one(aws_apigatewayv2_api.llm_apigw[*].id)
   route_key = "GET /{llmServerApiPath+}"
@@ -76,7 +76,7 @@ resource "aws_apigatewayv2_route" "root_get" {
 }
 
 resource "aws_apigatewayv2_integration" "root_get" {
-  count = var.create_api_gw ? 1 : 0
+  count = (var.create_api_gw && var.llm_server == "ollama") ? 1 : 0
 
   api_id             = one(aws_apigatewayv2_api.llm_apigw[*].id)
   integration_type   = "HTTP_PROXY"
@@ -89,7 +89,7 @@ resource "aws_apigatewayv2_integration" "root_get" {
 
 resource "aws_apigatewayv2_route" "root_delete" {
   # To double check VLLM and OLLAMA API reference
-  count = var.create_api_gw ? 1 : 0
+  count = (var.create_api_gw && var.llm_server == "ollama") ? 1 : 0
 
   api_id    = one(aws_apigatewayv2_api.llm_apigw[*].id)
   route_key = "DELETE /{llmServerApiPath+}"
@@ -97,7 +97,7 @@ resource "aws_apigatewayv2_route" "root_delete" {
 }
 
 resource "aws_apigatewayv2_integration" "root_delete" {
-  count = var.create_api_gw ? 1 : 0
+  count = (var.create_api_gw && var.llm_server == "ollama") ? 1 : 0
 
   api_id             = one(aws_apigatewayv2_api.llm_apigw[*].id)
   integration_type   = "HTTP_PROXY"
